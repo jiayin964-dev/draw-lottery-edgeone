@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>抽签</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f4f7fa;padding:20px}
+.box{background:#fff;padding:40px;border-radius:16px;box-shadow:0 4px 20px #00000012;text-align:center;width:100%;max-width:480px}
+h1{margin-bottom:24px;color:#222}
+#result{font-size:22px;margin:30px 0;min-height:60px;color:#333}
+button{padding:14px 32px;font-size:18px;border:none;border-radius:10px;background:#2b78e4;color:#fff;cursor:pointer}
+button:disabled{background:#aaa;cursor:not-allowed}
+.dbg{margin-top:40px;color:#999;font-size:12px;background:transparent;border:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>抽签</h1>
+  <div id="result">等待抽签</div>
+  <button id="drawBtn">点击抽签</button>
+  <br>
+  <button class="dbg" id="clearLocal">【调试：清除本机抽取标记】</button>
+</div>
+<script>
+const drawBtn = document.getElementById("drawBtn");
+const result = document.getElementById("result");
+const clearLocal = document.getElementById("clearLocal");
+
+if(localStorage.getItem("hasDraw") === "1"){
+  drawBtn.disabled = true;
+  result.innerText = "你已经抽取过任务啦";
+}
+
+drawBtn.onclick = async ()=>{
+  drawBtn.disabled = true;
+  result.innerText = "抽取中...";
+  try{
+    const res = await fetch(`/api/draw?action=draw`);
+    const data = await res.json();
+    if(data.success){
+      result.innerText = data.task;
+      localStorage.setItem("hasDraw","1");
+    }else{
+      result.innerText = data.msg;
+      drawBtn.disabled = false;
+    }
+  }catch(e){
+    result.innerText = "请求失败，请稍后重试";
+    drawBtn.disabled = false;
+  }
+}
+
+clearLocal.onclick = ()=>{
+  localStorage.removeItem("hasDraw");
+  result.innerText = "标记已清除，可以重新抽签";
+  drawBtn.disabled = false;
+}
+</script>
+</body>
+</html>
