@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>抽签后台</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
+body{background:#f4f7fa;padding:30px}
+.box{background:#fff;padding:30px;border-radius:16px;max-width:700px;margin:0 auto;box-shadow:0 4px 20px #00000012}
+h2{margin-bottom:20px}
+textarea{width:100%;height:160px;padding:12px;font-size:15px;border:1px solid #ddd;border-radius:8px;margin-bottom:16px}
+input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:16px;font-size:15px}
+button{padding:12px 20px;margin-right:10px;margin-bottom:10px;border:none;border-radius:8px;background:#2b78e4;color:#fff;font-size:15px;cursor:pointer}
+#msg{margin-top:16px;color:#222;white-space:pre-line}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>管理面板</h2>
+<textarea id="taskText" placeholder="每行一条任务"></textarea>
+<input id="pwdInput" placeholder="管理员密码" type="password">
+<div>
+  <button id="initBtn">初始化任务池</button>
+  <button id="resetDrawnBtn">重置抽取记录（保留任务）</button>
+  <button id="resetAllBtn">清空全部</button>
+  <button id="statusBtn">查询进度</button>
+</div>
+<div id="msg"></div>
+</div>
+<script>
+const taskText = document.getElementById("taskText");
+const pwdInput = document.getElementById("pwdInput");
+const msg = document.getElementById("msg");
+const ADMIN_PWD = "6471B&21";
+
+function show(m){msg.innerText=m}
+
+document.getElementById("initBtn").onclick = async ()=>{
+  const lines = taskText.value.split("\n").map(i=>i.trim()).filter(i=>i);
+  if(lines.length===0){show("任务不能为空");return}
+  const res = await fetch("/api/draw?action=init",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({tasks:lines})
+  })
+  const d = await res.json();
+  show(d.msg);
+}
+
+document.getElementById("resetDrawnBtn").onclick = async ()=>{
+  const pwd = pwdInput.value;
+  if(pwd!==ADMIN_PWD){show("密码不对");return}
+  const res = await fetch(`/api/draw?action=resetDrawn&pwd=${pwd}`,{method:"POST"})
+  const d = await res.json();
+  show(d.msg);
+}
+
+document.getElementById("resetAllBtn").onclick = async ()=>{
+  const res = await fetch("/api/draw?action=reset",{method:"POST"})
+  const d = await res.json();
+  show(d.msg);
+}
+
+document.getElementById("statusBtn").onclick = async ()=>{
+  const pwd = pwdInput.value;
+  if(pwd!==ADMIN_PWD){show("密码不对");return}
+  const res = await fetch(`/api/draw?action=getStatus&pwd=${pwd}`)
+  const d = await res.json();
+  if(d.success){
+    show(`总数：${d.total}，已抽：${d.drawnCount}`);
+  }else{
+    show(d.msg);
+  }
+}
+</script>
+</body>
+</html>
